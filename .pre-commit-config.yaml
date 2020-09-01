@@ -1,0 +1,40 @@
+#########################
+# set up pre-commit hook
+########################
+# 1. in project conda env, at project root folder: run "pip install pre-commit"
+# 2. create and edit .pre-commit-config.yaml under project root folder
+# 3. in project conda env, at project root folder: run "pre-commit install"
+
+repos:
+  ### black: auto formatting
+  - repo: https://github.com/ambv/black
+    rev: stable
+    hooks:
+      - id: black
+        language_version: python3.7
+  ### add end of file line
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.5.0
+    hooks:
+      - id: end-of-file-fixer
+  ### flake8: check for PEP8 style
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v1.2.3
+    hooks:
+      - id: flake8
+        args: ['--max-line-length=120',
+               '--max-complexity=10',
+               '--ignore=E501,W503,E231',  # conflicts with black
+               '--select=C,E,F,W,B,B950',
+               '--exclude=kedro_cli.py,00-kedro-init.py']
+        exclude: src/pfj_pricing/io/pyspark.py
+#        src/pfj_pricing/run.py .ipython/profile_default/startup/00-kedro-init.py kedro_cli.py ^(deploy/)
+  ### isort to sort all the imports in order
+  - repo: https://github.com/pre-commit/mirrors-isort
+    rev: v5.4.2
+    hooks:
+      - id: isort
+        args: ['-m=3',  # multi line output = vert-hanging
+               '-l=88',  # max line length
+               '-o=kedro',  # known thrid party
+        ]
