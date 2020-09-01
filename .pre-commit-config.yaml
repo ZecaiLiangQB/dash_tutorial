@@ -27,8 +27,6 @@ repos:
                '--ignore=E501,W503,E231',  # conflicts with black
                '--select=C,E,F,W,B,B950',
                '--exclude=kedro_cli.py,00-kedro-init.py']
-        exclude: src/pfj_pricing/io/pyspark.py
-#        src/pfj_pricing/run.py .ipython/profile_default/startup/00-kedro-init.py kedro_cli.py ^(deploy/)
   ### isort to sort all the imports in order
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v5.4.2
