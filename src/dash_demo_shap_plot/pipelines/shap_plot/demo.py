@@ -26,8 +26,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-This is a boilerplate pipeline 'shap_plot'
-generated using Kedro 0.16.4
+Useful links:
+- more dash components: https://dash.plotly.com/dash-core-components
+- dash data table: https://dash.plotly.com/datatable
+- more html components: https://dash.plotly.com/dash-html-components
+- more attributes for html tag: https://www.w3schools.com/tags/tag_img.asp
 """
 
 import pandas as pd
@@ -54,7 +57,7 @@ shap_values = pd.read_csv("data/08_reporting/shap_values.csv")
 
 ############################ styles ##############################
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
-# attributes for html tag: https://www.w3schools.com/tags/tag_img.asp
+
 left_margin = 40
 tab_default_style = {"fontSize": 20}
 tab_selected_style = {"fontSize": 20, "backgroundColor": "#86caf9"}
