@@ -115,12 +115,11 @@ def plot_shap_dependence_plot_with_interaction(
     # Plot histogram when the feature is not a binary variable
     _plot_histogram(plot_histogram, feature_col, data_df, nbins)
 
-    # plt.gcf()
+    # plt.gcf().set_size_inches(figsize[0], figsize[1])
     # plt.show()
 
 
 def plot_shap_dependence_plot_by_segment(
-    params: dict,
     feature_col: str,
     shap_value_df: pd.DataFrame,
     data_df: pd.DataFrame,
@@ -136,7 +135,6 @@ def plot_shap_dependence_plot_by_segment(
     Color-code the dots and median line by segment flags (may not be in selected features).
 
     Args:
-        params (dict): global parameters from parameters.yml
         feature_col (str): name of the column that we want to visualize
         shap_value_df (pd.DataFrame): the shap value matrix given by explainer.shap_value_df(data_df)
         data_df (pd.DataFrame): the test data with selected features.
@@ -155,9 +153,8 @@ def plot_shap_dependence_plot_by_segment(
         Color-code the median line by selected flag when plot_median_line = True.
 
     """
-    # Retrieve configuration parameters
-    numeric_cols = params["numeric_cols"]
-    target_variable_col = params["target_var"]
+    # Define numeric columns
+    numeric_cols = [x for x in data_df.columns if data_df[x].nunique() > 5]
 
     # Build contri_df for median lines
     median_shap_df = _calculate_median_shap_df(
@@ -183,7 +180,7 @@ def plot_shap_dependence_plot_by_segment(
 
     # Plot title
     plt.title(
-        "{} Contribution to {}".format(feature_col, target_variable_col), fontsize=15
+        "{} Contribution to {}".format(feature_col, "target variable"), fontsize=15
     )
     plt.xlabel("Feature: " + feature_col, fontsize=15)
     plt.ylabel("SHAP value", fontsize=15)
@@ -212,7 +209,7 @@ def plot_shap_dependence_plot_by_segment(
     # Plot histogram when the feature is not a binary variable
     _plot_histogram(plot_histogram, feature_col, data_df, nbins)
 
-    plt.gcf().set_size_inches(figsize[0], figsize[1])
+    # plt.gcf().set_size_inches(figsize[0], figsize[1])
     # plt.show()
 
 

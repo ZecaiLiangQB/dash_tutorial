@@ -80,7 +80,7 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div(
     children=[
         ###############
-        # 1.Header of the whole website
+        # 0.Header of the whole website
         html.Div(style={"width": "100%", "height": 10}),  # space
         html.H2(children="Shap Plots Demo", style={"margin-left": left_margin}),
         html.Div(style={"width": "100%", "height": 10}),  # space
@@ -89,13 +89,13 @@ app.layout = html.Div(
             id="tabs",
             children=[
                 ###############
-                # 2. First tab
+                # 1. First tab
                 dcc.Tab(
                     label="Feature Importance Plot",
                     children=[
                         html.Div(style={"width": "100%", "height": 10}),  # space
                         ###############
-                        # 2.1 Dropdown menu
+                        # 1.1 Dropdown menu
                         html.H5(
                             children="Select plot type for feature importance plot:",
                             style={"margin-left": left_margin},
@@ -116,7 +116,7 @@ app.layout = html.Div(
                             style={"margin-left": left_margin},
                         ),
                         ###############
-                        # 2.2 Plot
+                        # 1.2 Plot
                         html.Div(
                             children=[
                                 html.Img(
@@ -133,9 +133,90 @@ app.layout = html.Div(
                     selected_style=tab_selected_style,
                 ),
                 ###############
-                # 3. Second tab
+                # 2. Second tab
                 dcc.Tab(
                     label="Partial Dependent Plot",
+                    children=[
+                        html.Div(style={"width": "100%", "height": 10}),  # space
+                        ###############
+                        # 2.1 Dropdown menu (feature column)
+                        html.H5(
+                            children="Select feature column to plot:",
+                            style={"margin-left": left_margin},
+                        ),
+                        html.Div(
+                            children=[
+                                dcc.Dropdown(
+                                    id="feature_name_tab2",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in shap_values.columns
+                                    ],
+                                    value=None,
+                                    placeholder="Select feature column to plot on the x-axis",
+                                    style=dropdown_style,
+                                ),
+                            ],
+                            style={"margin-left": left_margin},
+                        ),
+                        ###############
+                        html.Div(style={"width": "100%", "height": 10}),  # space
+                        # 2.2 Dropdown menu (interaction column)
+                        html.H5(
+                            children="Select interaction feature to plot:",
+                            style={"margin-left": left_margin},
+                        ),
+                        html.Div(
+                            children=[
+                                dcc.Dropdown(
+                                    id="interaction_name",
+                                    options=[
+                                        {"label": i, "value": i}
+                                        for i in shap_values.columns
+                                    ],
+                                    value="auto",
+                                    placeholder="Select interaction feature for color-code",
+                                    style=dropdown_style,
+                                ),
+                            ],
+                            style={"margin-left": left_margin},
+                        ),
+                        ###############
+                        # 2.3 Choose to plot median line
+                        html.H5(
+                            children="Plot median line of SHAP values:",
+                            style={"margin-left": left_margin},
+                        ),
+                        dcc.RadioItems(
+                            id="median_line_tab2",
+                            options=[
+                                {"label": "yes", "value": "yes"},
+                                {"label": "no", "value": "no"},
+                            ],
+                            value="no",
+                            style={"margin-left": left_margin},
+                        ),
+                        ###############
+                        # 2.4 PDP plot
+                        html.Div(
+                            children=[
+                                html.Img(
+                                    id="PDP_plot_tab2",
+                                    src="",
+                                    style=pdp_plot_stype,
+                                ),
+                            ],
+                            style={"text-align": "center"},
+                        ),
+                        ###############
+                    ],
+                    style=tab_default_style,
+                    selected_style=tab_selected_style,
+                ),
+                ###############
+                # 3. Third tab
+                dcc.Tab(
+                    label="Partial Dependent Plot (by segment)",
                     children=[
                         html.Div(style={"width": "100%", "height": 10}),  # space
                         ###############
@@ -147,7 +228,7 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 dcc.Dropdown(
-                                    id="feature_name",
+                                    id="feature_name_tab3",
                                     options=[
                                         {"label": i, "value": i}
                                         for i in shap_values.columns
@@ -169,25 +250,26 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 dcc.Dropdown(
-                                    id="interaction_name",
+                                    id="segment_name",
                                     options=[
                                         {"label": i, "value": i}
                                         for i in shap_values.columns
                                     ],
                                     value="auto",
-                                    placeholder="Select interaction feature for color-code",
+                                    placeholder="Select segment column",
                                     style=dropdown_style,
                                 ),
                             ],
                             style={"margin-left": left_margin},
                         ),
                         ###############
+                        # 3.3 Choose to plot median line
                         html.H5(
                             children="Plot median line of SHAP values:",
                             style={"margin-left": left_margin},
                         ),
                         dcc.RadioItems(
-                            id="median_line",
+                            id="median_line_tab3",
                             options=[
                                 {"label": "yes", "value": "yes"},
                                 {"label": "no", "value": "no"},
@@ -196,11 +278,11 @@ app.layout = html.Div(
                             style={"margin-left": left_margin},
                         ),
                         ###############
-                        # 3.4 PDP plot
+                        # 3.4 PDP plot (by segment)
                         html.Div(
                             children=[
                                 html.Img(
-                                    id="PDP_plot",
+                                    id="PDP_plot_tab_3",
                                     src="",
                                     style=pdp_plot_stype,
                                 ),
@@ -242,9 +324,9 @@ def _generate_summary_plot(plot_type="dot"):
 @app.callback(
     Output("PDP_plot", "src"),
     [
-        Input("feature_name", "value"),
-        Input("interaction_name", "value"),
-        Input("median_line", "value"),
+        Input("feature_name_tab2", "value"),
+        Input("interaction_name_tab2", "value"),
+        Input("median_line_tab2", "value"),
     ],
 )
 def _generate_pdp_plot(feature_name, interaction_name, median_line):
