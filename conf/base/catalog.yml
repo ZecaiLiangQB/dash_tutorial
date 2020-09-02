@@ -43,8 +43,34 @@
 # This is a data set used by the "Hello World" example pipeline provided with the project
 # template. Please feel free to remove it once you remove the example pipeline.
 
+# data
 example_iris_data:
   type: pandas.CSVDataSet
   filepath: data/01_raw/iris.csv
 
+example_train_x:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/train_x.csv
 
+example_train_y:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/train_y.csv
+
+example_test_x:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/test_x.csv
+
+example_test_y:
+  type: pandas.CSVDataSet
+  filepath: data/05_model_input/test_y.csv
+
+# model
+example_model:
+  type: kedro.extras.datasets.pickle.PickleDataSet
+  filepath: data/06_models/example_model.pkl
+
+example_predictions:
+  type: pandas.CSVDataSet
+  filepath: data/07_model_output/pred_y.csv
+
+# shap
