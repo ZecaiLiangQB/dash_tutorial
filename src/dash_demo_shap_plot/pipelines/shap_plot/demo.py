@@ -163,7 +163,7 @@ app.layout = html.Div(
                                     id="feature_name",
                                     options=[
                                         {"label": i, "value": i}
-                                        for i in train_x.columns
+                                        for i in shap_values.columns
                                     ],
                                     value=None,
                                     placeholder="Select feature column to plot on the x-axis",
@@ -185,7 +185,7 @@ app.layout = html.Div(
                                     id="interaction_name",
                                     options=[
                                         {"label": i, "value": i}
-                                        for i in train_x.columns
+                                        for i in shap_values.columns
                                     ],
                                     value="auto",
                                     placeholder="Select interaction feature for color-code",
@@ -195,7 +195,21 @@ app.layout = html.Div(
                             style={"margin-left": left_margin},
                         ),
                         ###############
-                        # 3.3 PDP plot
+                        html.H5(
+                            children="Plot median line of SHAP values:",
+                            style={"margin-left": left_margin},
+                        ),
+                        dcc.RadioItems(
+                            id="median_line",
+                            options=[
+                                {"label": "yes", "value": "yes"},
+                                {"label": "no", "value": "no"},
+                            ],
+                            value="no",
+                            style={"margin-left": left_margin},
+                        ),
+                        ###############
+                        # 3.4 PDP plot
                         html.Div(
                             children=[
                                 html.Img(
@@ -219,13 +233,13 @@ app.layout = html.Div(
 ###################### callbacks for Tab 1 ###########################
 # choose plot type from dropdown menu,
 # generate summary plot
-# @app.callback(Output("summary_plot", "figure"), [Input("plot_type", "value")])
 @app.callback(Output("summary_plot", "src"), [Input("plot_type", "value")])
 def _generate_summary_plot(plot_type="dot"):
-    # fig = plt.figure(figsize=(12, 12))
-    shap.summary_plot(shap_values.to_numpy(), train_x, plot_type=plot_type, show=False)
+    feature_cols = shap_values.columns
+    shap.summary_plot(
+        shap_values.to_numpy(), train_x[feature_cols], plot_type=plot_type, show=False
+    )
     plt.tight_layout()
-    # plotly_fig = mpl_to_plotly(fig)
     fig = plt.gcf()
     plotly_fig = fig_to_uri(fig)
     return plotly_fig
@@ -236,15 +250,20 @@ def _generate_summary_plot(plot_type="dot"):
 # generate PDP plot
 @app.callback(
     Output("PDP_plot", "src"),
-    [Input("feature_name", "value"), Input("interaction_name", "value")],
+    [
+        Input("feature_name", "value"),
+        Input("interaction_name", "value"),
+        Input("median_line", "value"),
+    ],
 )
-def _generate_pdp_plot(feature_name, interaction_name):
+def _generate_pdp_plot(feature_name, interaction_name, median_line):
     if feature_name:
         plot_shap_dependence_plot_with_interaction(
             feature_col=feature_name,
             shap_value_df=shap_values,
             data_df=train_x,
             interaction_col=interaction_name,
+            plot_median_line=(median_line == "yes"),
         )
         plt.tight_layout()
         fig = plt.gcf()

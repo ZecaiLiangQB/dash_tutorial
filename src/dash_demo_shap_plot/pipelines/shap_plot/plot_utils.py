@@ -78,7 +78,7 @@ def plot_shap_dependence_plot_with_interaction(
 
     """
     # Retrieve configuration parameters
-    selected_feature_cols = data_df.columns
+    selected_feature_cols = shap_value_df.columns
 
     # Build contri_df for median lines
     median_shap_df = _calculate_median_shap_df(feature_col, data_df, shap_value_df)
