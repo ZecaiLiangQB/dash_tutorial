@@ -49,8 +49,10 @@ def train_model(
     conf/project/parameters.yml. All of the data as well as the parameters
     will be provided to this function at the time of execution.
     """
+    context_cols = parameters["context_cols"]
+    feature_cols = [x for x in train_x.columns if x not in context_cols]
     model = RandomForestRegressor(max_depth=6, random_state=0, n_estimators=10)
-    model.fit(train_x, train_y)
+    model.fit(train_x[feature_cols], train_y)
 
     return model
 
