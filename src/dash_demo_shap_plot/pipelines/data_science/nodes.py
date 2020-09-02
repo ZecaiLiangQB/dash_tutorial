@@ -38,7 +38,7 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-from xgboost import XGBClassifier
+from sklearn.ensemble import RandomForestRegressor
 
 
 def train_model(
@@ -49,7 +49,7 @@ def train_model(
     conf/project/parameters.yml. All of the data as well as the parameters
     will be provided to this function at the time of execution.
     """
-    model = XGBClassifier()
+    model = RandomForestRegressor(max_depth=6, random_state=0, n_estimators=10)
     model.fit(train_x, train_y)
 
     return model
