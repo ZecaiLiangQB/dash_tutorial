@@ -36,7 +36,7 @@ import pandas as pd
 import shap
 
 
-def calculate_shap(model: Any, train_x: pd.DataFrame) -> np.ndarray:
+def calculate_shap(model: Any, train_x: pd.DataFrame) -> pd.DataFrame:
     # Calculate SHAP values
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(train_x)
