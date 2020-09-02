@@ -46,7 +46,7 @@
 # data
 example_iris_data:
   type: pandas.CSVDataSet
-  filepath: data/01_raw/iris.csv
+  filepath: data/01_raw/bike_sharing.csv
 
 example_train_x:
   type: pandas.CSVDataSet

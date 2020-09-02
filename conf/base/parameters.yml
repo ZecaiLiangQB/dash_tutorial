@@ -4,4 +4,5 @@
 # `src/pipelines/`
 example_test_data_ratio: 0.2
 
-
+# data
+target_variable_col: "count"
