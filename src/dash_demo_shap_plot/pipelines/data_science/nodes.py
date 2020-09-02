@@ -69,7 +69,7 @@ def report_accuracy(predictions: np.ndarray, test_y: pd.DataFrame) -> None:
     # Get true class index
     target = np.round(predictions)
     # Calculate accuracy of predictions
-    accuracy = np.sum(test_y == target) / target.shape[0]
+    accuracy = np.sum(test_y.iloc[:, 0] == target) / target.shape[0]
     # Log the accuracy of the model
     log = logging.getLogger(__name__)
     log.info("Model accuracy on test set: %0.2f%%", accuracy * 100)
