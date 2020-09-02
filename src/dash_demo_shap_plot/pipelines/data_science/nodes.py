@@ -38,35 +38,28 @@ from typing import Any, Dict
 
 import numpy as np
 import pandas as pd
-import xgboost
+from xgboost import XGBClassifier
 
 
 def train_model(
     train_x: pd.DataFrame, train_y: pd.DataFrame, parameters: Dict[str, Any]
-) -> xgboost.Booster:
+) -> Any:
     """Node for training a simple multi-class xgboost model. The
     number of training iterations as well as the learning rate are taken from
     conf/project/parameters.yml. All of the data as well as the parameters
     will be provided to this function at the time of execution.
     """
-    num_iter = parameters["example_num_train_iter"]
-
-    # Train a xgboost model
-    hyper_params = {
-        "max_depth": parameters["hyper_param"]["max_depth"],
-        "learning_rate": parameters["hyper_param"]["learning_rate"],
-    }
-    model = xgboost.train(
-        hyper_params, xgboost.DMatrix(train_x, label=train_y), num_iter
-    )
+    model = XGBClassifier()
+    model.fit(train_x, train_y)
 
     return model
 
 
-def predict(model: xgboost.Booster, test_x: pd.DataFrame) -> np.ndarray:
+def predict(model: Any, test_x: pd.DataFrame) -> np.ndarray:
     """Node for making predictions given a pre-trained model and a test set."""
-
-    return model.predict(test_x)
+    pred_y = model.predict(test_x)
+    pred_y = [round(y) for y in pred_y]
+    return
 
 
 def report_accuracy(predictions: np.ndarray, test_y: pd.DataFrame) -> None:
