@@ -55,10 +55,10 @@ def split_data(
     test_data = data.iloc[:n_test, :].reset_index(drop=True)
 
     # Split the data to features and labels
-    feature_cols = [x for x in data.columns if x != target_col]
-    train_data_x = training_data.loc[:, feature_cols]
+    non_target_cols = [x for x in data.columns if x != target_col]
+    train_data_x = training_data.loc[:, non_target_cols]
     train_data_y = training_data[target_col]
-    test_data_x = test_data.loc[:, feature_cols]
+    test_data_x = test_data.loc[:, non_target_cols]
     test_data_y = test_data[target_col]
 
     # When returning many variables, it is a good practice to give them names:
