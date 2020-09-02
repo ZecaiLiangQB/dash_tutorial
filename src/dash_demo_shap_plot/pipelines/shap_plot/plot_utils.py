@@ -1,344 +1,349 @@
-# QUANTUMBLACK CONFIDENTIAL
+# Copyright 2018-2019 QuantumBlack Visual Analytics Limited
 #
-# Copyright (c) 2016 - present QuantumBlack Visual Analytics Ltd. All
-# Rights Reserved.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-# NOTICE: All information contained herein is, and remains the property of
-# QuantumBlack Visual Analytics Ltd. and its suppliers, if any. The
-# intellectual and technical concepts contained herein are proprietary to
-# QuantumBlack Visual Analytics Ltd. and its suppliers and may be covered
-# by UK and Foreign Patents, patents in process, and are protected by trade
-# secret or copyright law. Dissemination of this information or
-# reproduction of this material is strictly forbidden unless prior written
-# permission is obtained from QuantumBlack Visual Analytics Ltd.
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+# OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+# NONINFRINGEMENT. IN NO EVENT WILL THE LICENSOR OR OTHER CONTRIBUTORS
+# BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN
+# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF, OR IN
+# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+#
+# The QuantumBlack Visual Analytics Limited ("QuantumBlack") name and logo
+# (either separately or in combination, "QuantumBlack Trademarks") are
+# trademarks of QuantumBlack. The License does not grant you any right or
+# license to the QuantumBlack Trademarks. You may not use the QuantumBlack
+# Trademarks or any confusingly similar mark as a trademark for your product,
+#     or use the QuantumBlack Trademarks in any other manner that might cause
+# confusion in the marketplace, including but not limited to in advertising,
+# on websites, or on software.
+#
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
+"""Helper functions for post model SHAP analysis in notebook.
+
+Used by /home/98_examples/template_plot_SHAP_results.ipynb,
+to plot partial dependent plot,
+and to plot partial dependent plot by segments.
 """
-Run SHAP and generalte all the reporting files.
 
-Functions:
-    "plot_dependence_with_histogram",
-    "plot_dependence_with_histogram_color_by_segment",
-    "_calculate_contri_df",
-    "_plot_median",
-    "_set_axis_limit",
-    "_plot_histogram",
+from typing import List, Tuple, Union
 
-"""
-
-import pandas as pd
-import numpy as np
-import shap
 import matplotlib
-from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
+import pandas as pd
+import shap
+from matplotlib.patches import Patch
 
 
-def plot_dependence_with_histogram(
-    col,
-    shap_value,
-    X,
-    holdout_data,
-    single_variable=False,
-    variable_sum=False,
-    interaction_col="auto",
-    plt_class_col=None,
-    filtered_index=None,
-    show_median=False,
-    selected_xlim=None,
-    selected_ylim=None,
-    population_histogram=True,
-    target_label=None,
-    nbins=35,
-):
-    """Plot dependence plot with overlapping histogram and twin y-axes.
+def plot_shap_dependence_plot_with_interaction(
+    feature_col: str,
+    shap_value_df: pd.DataFrame,
+    data_df: pd.DataFrame,
+    interaction_col: Union[str, None] = None,
+    plot_median_line: bool = False,
+    selected_xlim: Union[List[float], None] = None,
+    selected_ylim: Union[List[float], None] = None,
+    figsize: List[int] = [15, 10],
+    plot_histogram: bool = True,
+    nbins: int = 35,
+) -> None:
+    """Plots dependence plot with overlapping histogram and interaction column.
 
     Args:
-        col (string): Name of the column that we want to visualize
-        shap_value (numpy.array): The shap value matrix given by explainer.shap_values(X)[1]
-        X (pandas.DataFrame): The test data with selected features
-        holdout_data (pandas.DataFrame): The test data with all columns
-        single_variable (boolean): Whether to consider interaction terms
-        variable_sum (boolean): Whether to add shap values of variable col and interactive variable
-        interaction_col (None or string): The column name for plot class.
-        plt_class_col (None or string): The column name for interaction terms.
-                                        'auto' means asking SHAP to select the one interacting most.
-        filtered_index (None or list): If not None, it should be a list of Boolean values indicating
-                                        whether this indice should be in the visualization
-                                       If None, not filtering is done on the holdout data.
-        show_median (boolean): Whether to show the median line for the interaction feature
-        selected_xlim (list of two int or None): Lower bound and upper bound of the x axis
-        selected_ylim (list of two int or None): Lower bound and upper bound of the y axis
-        population_histogram (boolean): If True, a population histogram will be ploted in the background
-        target_label (string): The name of the target shows on the plot
-        nbins (int): The number of bins in histogram
+        feature_col (str): name of the column that we want to visualize
+        shap_value_df (pd.DataFrame): the shap value matrix given by explainer.shap_value_df(data_df)
+        data_df (pd.DataFrame): the test data with selected features
+        interaction_col (None or str): the column name for interaction term.
+                                       'auto' means asking SHAP to select interaction term,
+                                       None means no interaction term.
+        plot_median_line (boolean): whether to show the median line for the interaction feature
+        selected_xlim (list of two float or None): lower bound and upper bound of the x axis
+        selected_ylim (list of two float or None): lower bound and upper bound of the y axis
+        figsize (list of two int): size of the plot
+        plot_histogram (boolean): if True, a population histogram will be plotted in the background
+        nbins (int): the number of bins in histogram
 
     Returns:
-        Prints out average probability of initiation before and after applying action
-        for that particular cohort.
-        Creates histogram of predictive probabilities before and after action
+        Scatter plot of SHAP values for the selected feature.
+        Creates histogram of the selected feature in the background.
+        Interaction column on the right-side panel.
+        Color-code the scatter plot by interaction column.
 
     """
-    shap_values = shap_value.copy()
-    X = X.copy()
-    holdout_data = holdout_data.copy()
+    # Retrieve configuration parameters
+    selected_feature_cols = data_df.columns
 
-    # TODO: not really functioning code, pass the filtered data as input instead
-    if filtered_index is not None:
-        shap_values = shap_values[filtered_index, :]
-        X = X.loc[filtered_index, :]
-        holdout_data = holdout_data.loc[filtered_index, :]
-
-    # change default parameters for binary variable
-    # TODO: this counts df is never used anywhere
-    if X[col].nunique() <= 3:
-        counts = pd.DataFrame(X[col].value_counts().reset_index())
-        counts.columns = [col, "Count"]
-        # print(counts.to_string(index=False), "\n\n\n")
-
-    # replace the shap value by the sum of the shap value
-    if variable_sum:
-        shap_sum = (
-            shap_values[:, np.where(X.columns == col)[0][0]]
-            + shap_values[:, np.where(X.columns == interaction_col)[0][0]]
-        )
-        shap_values[:, np.where(X.columns == col)[0][0]] = shap_sum
-
-    # TODO: when plt_class_col is continuous
-    # choose category for plotting
-    if plt_class_col is None and interaction_col != "auto":
-        plt_class_col = interaction_col
-
-    # build contri_df for median lines
-    contri_df_agg = _calculate_contri_df(
-        col, X, shap_values, holdout_data, plt_class_col
-    )
+    # Build contri_df for median lines
+    median_shap_df = _calculate_median_shap_df(feature_col, data_df, shap_value_df)
 
     # SHAP plot
     shap_args = {
-        "ind": col,
-        "shap_values": shap_values,
-        "features": X,
+        "ind": feature_col,
+        "shap_values": shap_value_df.loc[:, selected_feature_cols].values,
+        "features": data_df.loc[:, selected_feature_cols],
         "interaction_index": interaction_col,
         "alpha": 0.5,
         "dot_size": 10,
         "show": False,
     }
-    # single variable
-    if single_variable:
-        shap_args["color"] = "purple"
-        shap.dependence_plot(**shap_args)
-        plt.title("{} Contribution to {}".format(col, target_label))
+    shap.dependence_plot(**shap_args)
+    plt.title("{} Contribution to {}".format(feature_col, "target variable"))
 
-    # use the interaction_col for interaction
-    else:
-        shap.dependence_plot(**shap_args)
-        plt.title("{} Contribution to {}".format(col, target_label))
-        if variable_sum:
-            plt.ylabel("Sum of SHAP Value")
+    # Plot median SHAP line
+    _plot_median(plot_median_line, median_shap_df, feature_col, color_dir=None)
 
-    # plot median
-    _plot_median(show_median, contri_df_agg, col, plt_class_col)
-
-    # set axis limit
+    # Set axis limit
     _set_axis_limit(selected_xlim, selected_ylim)
 
-    # plot historgram when the feature is not a binary variable
-    _plot_histogram(population_histogram, col, holdout_data, nbins)
+    # Plot histogram when the feature is not a binary variable
+    _plot_histogram(plot_histogram, feature_col, data_df, nbins)
 
-    plt.gcf().set_size_inches(15, 10)
+    # plt.gcf()
     # plt.show()
 
 
-def plot_dependence_with_histogram_color_by_segment(
-    col,
-    shap_value,
-    X,
-    holdout_data,
-    plt_class_col=None,
-    filtered_index=None,
-    show_median=False,
-    selected_xlim=None,
-    selected_ylim=None,
-    population_histogram=True,
-    target_label=None,
-    nbins=35,
-):
-    """Plot dependence plot with overlapping histogram.
-
+def plot_shap_dependence_plot_by_segment(
+    params: dict,
+    feature_col: str,
+    shap_value_df: pd.DataFrame,
+    data_df: pd.DataFrame,
+    segment_col: Union[str, None] = None,
+    plot_median_line: bool = False,
+    selected_xlim: Union[List[float], None] = None,
+    selected_ylim: Union[List[float], None] = None,
+    figsize: List[int] = [15, 10],
+    plot_histogram: bool = True,
+    nbins: int = 35,
+) -> None:
+    """Plots dependence plot with overlapping histogram and by segment.
     Color-code the dots and median line by segment flags (may not be in selected features).
 
     Args:
-        col (string): Name of the column that we want to visualize
-        shap_value (numpy.array): The shap value matrix given by explainer.shap_values(X)[1]
-        X (pandas.DataFrame): The test data with selected features
-        holdout_data (pandas.DataFrame): The test data with all columns
-        plt_class_col (None or string): The column name as segment flag. Can be any column in holdout_data.
-        filtered_index (None or list): If not None, it should be a list of Boolean values indicating
-                                        whether this indice should be in the visualization
-                                       If None, not filtering is done on the holdout data.
-        show_median (boolean): Whether to show the median line for the interaction feature
-        selected_xlim (list of two int or None): Lower bound and upper bound of the x axis
-        selected_ylim (list of two int or None): Lower bound and upper bound of the y axis
-        population_histogram (boolean): If True, a population histogram will be ploted in the background
-        target_label (string): The name of the target shows on the plot
-        nbins (int): The number of bins in histogram
+        params (dict): global parameters from parameters.yml
+        feature_col (str): name of the column that we want to visualize
+        shap_value_df (pd.DataFrame): the shap value matrix given by explainer.shap_value_df(data_df)
+        data_df (pd.DataFrame): the test data with selected features.
+        segment_col (None or str): the column name as segment group.
+        plot_median_line (boolean): whether to show the median line for shap values.
+        selected_xlim (list of two float or None): lower bound and upper bound of the x axis
+        selected_ylim (list of two float or None): lower bound and upper bound of the y axis
+        figsize (list of two int): size of the plot.
+        plot_histogram (boolean): if True, a population histogram will be plotted in the background.
+        nbins (int): the number of bins in histogram.
 
     Returns:
         Scatter plot of SHAP values for the selected feature.
         Creates histogram of the selected feature in the background.
         Color-code the scatter plot by selected flag.
-        Color-code the median line by selected flag when show_median = True.
+        Color-code the median line by selected flag when plot_median_line = True.
 
     """
-    shap_values = shap_value.copy()
-    X = X.copy()
-    holdout_data = holdout_data.copy()
+    # Retrieve configuration parameters
+    numeric_cols = params["numeric_cols"]
+    target_variable_col = params["target_var"]
 
-    # TODO: not really functioning code, pass the filtered data as input instead
-    if filtered_index is not None:
-        shap_values = shap_values[filtered_index, :]
-        X = X.loc[filtered_index, :]
-        holdout_data = holdout_data.loc[filtered_index, :]
-
-    # build contri_df for median lines
-    contri_df_agg = _calculate_contri_df(
-        col, X, shap_values.values, holdout_data, plt_class_col
+    # Build contri_df for median lines
+    median_shap_df = _calculate_median_shap_df(
+        feature_col, data_df, shap_value_df, segment_col
     )
 
-    # TODO: when plt_class_col is continuous
-    # create a list of color based on values of column plt_class_col
-    cmap = matplotlib.cm.get_cmap("Set1")
-    color_dir = {}
-    for i, cat in enumerate(holdout_data[plt_class_col].unique()):
-        color_dir[cat] = cmap.colors[i]
-    color_col = [color_dir[value] for value in holdout_data[plt_class_col]]
+    # Color by segment_col
+    if segment_col is not None:
+        if segment_col not in numeric_cols:
+            color_col, color_dir = _color_by_segment_col(data_df[segment_col])
+        else:
+            # Bin continuously feature into quartiles
+            segment_col_cat = pd.qcut(data_df[segment_col], 4)
+            color_col, color_dir = _color_by_segment_col(segment_col_cat)
+    else:
+        color_col = None
+        color_dir = None
 
-    # scatter plot
-    plt.scatter(X[col], shap_value[col], c=color_col, s=10, alpha=0.5)
-    # plot title
-    plt.title("{} Contribution to {}".format(col, target_label), fontsize=15)
-    plt.xlabel("Feature: " + col, fontsize=15)
+    # Plot scatter plot
+    plt.scatter(
+        data_df[feature_col], shap_value_df[feature_col], c=color_col, s=10, alpha=0.5
+    )
+
+    # Plot title
+    plt.title(
+        "{} Contribution to {}".format(feature_col, target_variable_col), fontsize=15
+    )
+    plt.xlabel("Feature: " + feature_col, fontsize=15)
     plt.ylabel("SHAP value", fontsize=15)
-    # create legend
-    legend_elements = []
-    for value, color in color_dir.items():
-        legend_elements.append(
-            Patch(facecolor=color, edgecolor=color, label=plt_class_col + ": " + value)
-        )
-    plt.legend(handles=legend_elements)
 
-    # plot median
-    _plot_median(show_median, contri_df_agg, col, plt_class_col, color_dir=color_dir)
+    # Create legend
+    if segment_col is not None:
+        legend_elements = []
+        for value, color in color_dir.items():
+            legend_elements.append(
+                Patch(
+                    facecolor=color,
+                    edgecolor=color,
+                    label=segment_col + ": " + str(value),
+                )
+            )
+        plt.legend(handles=legend_elements)
 
-    # set axis limit
+    # Plot median SHAP line
+    _plot_median(
+        plot_median_line, median_shap_df, feature_col, segment_col, color_dir=color_dir
+    )
+
+    # Set axis limit
     _set_axis_limit(selected_xlim, selected_ylim)
 
-    # plot historgram when the feature is not a binary variable
-    _plot_histogram(population_histogram, col, holdout_data, nbins)
+    # Plot histogram when the feature is not a binary variable
+    _plot_histogram(plot_histogram, feature_col, data_df, nbins)
 
-    plt.gcf().set_size_inches(15, 10)
+    plt.gcf().set_size_inches(figsize[0], figsize[1])
     # plt.show()
 
 
-def _calculate_contri_df(col, X, shap_values, holdout_data, plt_class_col):
-    """Calculate the median SHAP values for each distinct feature value.
-
-    If segment flag (plt_class_col) is assigned, calculate by group separately.
+def _calculate_median_shap_df(
+    feature_col: str,
+    data_df: pd.DataFrame,
+    shap_value_df: pd.DataFrame,
+    segment_col: str = None,
+) -> pd.DataFrame:
+    """Calculates the median SHAP values for each distinct feature value.
+    If segment group (segment_col) is assigned, calculate by group separately.
 
     Args:
-        col (string): Name of the column that we want to visualize
-        X (pandas.DataFrame): The test data with selected features
-        shap_values (numpy.array): The shap value matrix given by explainer.shap_values(X)[1]
-        holdout_data (pandas.DataFrame): The test data with all columns
-        plt_class_col (string): Name of the column we use to color-code scatter plot.
-                                Doesn't need to be a feature in the model.
+        feature_col (str): name of the column that we want to visualize
+        data_df (pd.DataFrame): the test data with selected features
+        shap_value_df (pd.DataFrame): the shap value matrix given by explainer.shap_values(data_df)
+        segment_col (str): name of the column we use to color-code scatter plot.
+                           Doesn't need to be a feature in the model.
 
     Returns:
-        If group flag (plt_class_col) is assigned:
-            a pandas.DataFrame with columns [feature-name, flag-name, median-SHAP-value]
-        Else:
+        if segment column (segment_col) is assigned:
+            a pandas.DataFrame with columns [feature-name, segment-name, median-SHAP-value]
+        else:
             a pandas.DataFrame with columns [feature-name, median-SHAP-value]
 
     """
-    if plt_class_col is not None:
+    if segment_col is not None:
+        # Assemble data for median line
         contri_df = pd.DataFrame.from_dict(
             {
-                col: X[col],
-                plt_class_col: holdout_data[plt_class_col],
-                "shap_value": shap_values[:, np.where(X.columns == col)[0][0]],
+                feature_col: data_df[feature_col].values,
+                segment_col: data_df[segment_col].values,
+                "shap_value_df": shap_value_df[feature_col].values,
             }
         )
-        contri_df_agg = contri_df.groupby([col, plt_class_col]).median().reset_index()
-        contri_df_agg.columns = [col, plt_class_col, "Median"]
+        # Aggregate by segment column, and feature column
+        contri_df_agg = (
+            contri_df.groupby([feature_col, segment_col]).median().reset_index()
+        )
+        contri_df_agg.columns = [feature_col, segment_col, "Median"]
 
     else:
+        # Assemble data for median line
         contri_df = pd.DataFrame.from_dict(
             {
-                col: X[col],
-                "shap_value": shap_values[:, np.where(X.columns == col)[0][0]],
+                feature_col: data_df[feature_col].values,
+                "shap_value_df": shap_value_df[feature_col].values,
             }
         )
-        contri_df_agg = contri_df.groupby([col]).median().reset_index()
-        contri_df_agg.columns = [col, "Median"]
+        # Aggregate by feature column
+        contri_df_agg = contri_df.groupby([feature_col]).median().reset_index()
+        contri_df_agg.columns = [feature_col, "Median"]
 
     return contri_df_agg
 
 
-def _plot_median(show_median, contri_df_agg, col, plt_class_col, color_dir=None):
-    """Plot the median SHAP values on top of scatter plot.
-
-    Plot each group separately if segment flag (plt_class_col) is assigned.
+def _color_by_segment_col(segment_col_df: pd.DataFrame) -> Tuple[list, dict]:
+    """Generates the value for color column based on value of the input column.
 
     Args:
-        show_median (boolean): Whether to show the median line for the interaction feature
-        contri_df_agg (pandas.DataFrame): df with columns [feature-name, flag-name, median-SHAP-value]
-                                         if plt_class_col not None,
+        segment_col_df (pd.Series): the column to segment and color by data points.
+                                    If continuous, bin values into quartiles.
+
+    Returns:
+        color_col (list): assign color to each data points based on the value of segment_col.
+        color_dir (dict): color dict that map each segment to its color.
+
+    """
+    # Choose cmap for colors
+    cmap = matplotlib.cm.get_cmap("Set1")
+    color_dir = {}
+
+    # Create cmap for each segment
+    for i, cat in enumerate(segment_col_df.unique()):
+        color_dir[cat] = cmap.colors[i]
+    color_col = [color_dir[value] for value in segment_col_df]
+
+    return (color_col, color_dir)
+
+
+def _plot_median(
+    plot_median_line: bool,
+    median_shap_df: pd.DataFrame,
+    feature_col: str,
+    segment_col: Union[str, None] = None,
+    color_dir: Union[dict, None] = None,
+) -> None:
+    """Plots the median SHAP values on top of scatter plot.
+    Plot each group separately if segment group (segment_col) is assigned.
+
+    Args:
+        plot_median_line (boolean): Whether to show the median line for shap values.
+        median_shap_df (pd.DataFrame): df with columns [feature-name, flag-name, median-SHAP-value]
+                                         if segment_col is assigned,
                                          else df with columns [feature-name, median-SHAP-value].
-        col (string): Name of the column that we want to visualize
-        plt_class_col (string): Name of the column we use to color-code scatter plot.
-                                Doesn't need to be a feature in the model.
-        color_dir (dict): a dictionary that maps distinct values of the flag feature to colors,
-                         only use when plt_class_col is not None.
+        feature_col (str): Name of the column that we want to visualize
+        segment_col (str): Name of the column we use to color-code scatter plot.
+                           Doesn't need to be a feature in the model.
+        color_dir (dict or None): a dictionary that maps distinct values of the flag feature to colors,
+                                  only use when segment_col is not None.
 
     Returns:
         The median line plot with legend.
-        Color-coded by segment flag (plt_class_col) if it's assigned.
+        Color-coded by segment group (segment_col) if it's assigned.
 
     """
-    if show_median:
-        if plt_class_col is None:
+    if plot_median_line:
+        if segment_col is None:
             plt.plot(
-                col,
+                feature_col,
                 "Median",
-                data=contri_df_agg,
-                label="Median Contribution for {}".format(col),
+                data=median_shap_df,
+                label="Median Contribution for {}".format(feature_col),
             )
         else:
-            # re-create color dictionary when plt_class_col is assigned,
+            # Re-create color dictionary when segment_col is assigned,
             # but no color_dir is passed
             if color_dir is None:
-                # create a list of color based on values of column plt_class_col
+                # Create a list of color based on values of column segment_col
                 cmap = matplotlib.cm.get_cmap("Set1")
                 color_dir = {}
-                for i, cat in enumerate(contri_df_agg[plt_class_col].unique()):
+                for i, cat in enumerate(median_shap_df[segment_col].unique()):
                     color_dir[cat] = cmap.colors[i]
 
-            for cur_cate in contri_df_agg[plt_class_col].unique():
+            for cur_cate in median_shap_df[segment_col].unique():
                 plt.plot(
-                    col,
+                    feature_col,
                     "Median",
-                    data=contri_df_agg.loc[contri_df_agg[plt_class_col] == cur_cate, :],
+                    data=median_shap_df.loc[median_shap_df[segment_col] == cur_cate, :],
                     label="Median Contribution for "
-                    + plt_class_col
+                    + segment_col
                     + "=={}".format(cur_cate),
                     color=color_dir[cur_cate],
                 )
-        # print(contri_df_agg)
         plt.legend()
 
 
-def _set_axis_limit(selected_xlim, selected_ylim):
-    """Manually set the axis limits for x-axis and y-axis.
+def _set_axis_limit(
+    selected_xlim: Union[List[float], None], selected_ylim: Union[List[float], None]
+) -> None:
+    """Manually sets the axis limits for x-axis and y-axis.
 
     Args:
         selected_xlim (list of two ints or None): lower bound and upper bound of the x axis
@@ -357,27 +362,29 @@ def _set_axis_limit(selected_xlim, selected_ylim):
         cur_axis.set_ylim(selected_ylim)
 
 
-def _plot_histogram(population_histogram, col, holdout_data, nbins):
-    """Plot histogram of the selected feature in the background.
+def _plot_histogram(
+    plot_histogram: bool, feature_col: str, data_df: pd.DataFrame, nbins: int
+) -> None:
+    """Plots histogram of the selected feature in the background.
 
     Args:
-        population_histogram (boolean): If True, a population histogram will be plotted in the background
-        col (string): Name of the column that we want to visualize
-        holdout_data (pandas.DataFrame): The test data with all columns
+        plot_histogram (boolean): If True, a population histogram will be plotted in the background
+        feature_col (str): Name of the column that we want to visualize
+        data_df (pd.DataFrame): The test data with all columns
         nbins (int): The number of bins in histogram
 
     Returns:
         Histogram plot in the background.
 
     """
-    if population_histogram:
+    if plot_histogram:
         ax1 = plt.gca()
         ax2 = ax1.twinx()
         ax2.hist(
-            holdout_data[col],
+            data_df[feature_col],
             bins=nbins,
             alpha=0.3,
-            label="Population Count",
+            label="Histogram Count",
             color="grey",
         )
         plt.legend(loc="upper left")
