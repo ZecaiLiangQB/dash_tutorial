@@ -58,7 +58,7 @@ def train_model(
 def predict(model: Any, test_x: pd.DataFrame) -> np.ndarray:
     """Node for making predictions given a pre-trained model and a test set."""
     pred_y = model.predict(test_x)
-    pred_y = [round(y) for y in pred_y]
+
     return pred_y
 
 
@@ -67,9 +67,9 @@ def report_accuracy(predictions: np.ndarray, test_y: pd.DataFrame) -> None:
     previous node. Notice that this function has no outputs, except logging.
     """
     # Get true class index
-    target = np.argmax(test_y.to_numpy(), axis=1)
+    target = np.round(predictions)
     # Calculate accuracy of predictions
-    accuracy = np.sum(predictions == target) / target.shape[0]
+    accuracy = np.sum(test_y == target) / target.shape[0]
     # Log the accuracy of the model
     log = logging.getLogger(__name__)
     log.info("Model accuracy on test set: %0.2f%%", accuracy * 100)
