@@ -30,10 +30,6 @@ This is a boilerplate pipeline 'shap_plot'
 generated using Kedro 0.16.4
 """
 
-from typing import Any
-from io import BytesIO
-import base64
-import numpy as np
 import pandas as pd
 import shap
 from matplotlib import pyplot as plt
@@ -45,21 +41,9 @@ from plotly.tools import mpl_to_plotly
 import plotly.graph_objs as go
 
 from plot_utils import (
+    _fig_to_uri,
     plot_shap_dependence_plot_with_interaction,
 )
-
-# helper function to encode matplotlib image
-def fig_to_uri(in_fig, close_all=True, **save_args):
-    # type: (plt.Figure) -> str
-    """Save a figure as a URI."""
-    out_img = BytesIO()
-    in_fig.savefig(out_img, format="png", **save_args)
-    if close_all:
-        in_fig.clf()
-        plt.close("all")
-    out_img.seek(0)  # rewind file
-    encoded = base64.b64encode(out_img.read()).decode("ascii").replace("\n", "")
-    return "data:image/png;base64,{}".format(encoded)
 
 
 ############################ data ##############################
@@ -70,7 +54,7 @@ shap_values = pd.read_csv("data/08_reporting/shap_values.csv")
 
 ############################ styles ##############################
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
-# html tag: https://www.w3schools.com/tags/tag_img.asp
+# attributes for html tag: https://www.w3schools.com/tags/tag_img.asp
 left_margin = 40
 tab_default_style = {"fontSize": 20}
 tab_selected_style = {"fontSize": 20, "backgroundColor": "#86caf9"}
@@ -84,12 +68,12 @@ pdp_plot_stype = {
     "width": "50%",
 }
 
-# set Matplotlib backend to a non-interactive
+# Set Matplotlib backend to a non-interactive
 plt.switch_backend("Agg")
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 ############################ layout ##############################
+app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 app.layout = html.Div(
     children=[
         ###############
@@ -230,6 +214,8 @@ app.layout = html.Div(
         ),
     ],
 )
+
+
 ###################### callbacks for Tab 1 ###########################
 # choose plot type from dropdown menu,
 # generate summary plot
@@ -241,12 +227,14 @@ def _generate_summary_plot(plot_type="dot"):
     )
     plt.tight_layout()
     fig = plt.gcf()
-    plotly_fig = fig_to_uri(fig)
+    # Convert plt.figure object to base64 encoding
+    # Don't need if use plotly library (plotly.express) to plot
+    plotly_fig = _fig_to_uri(fig)
     return plotly_fig
 
 
 ###################### callbacks for Tab 2 ###########################
-# choose feature name from dropdown menu,
+# choose feature name, interaction name, and whether to plot median line
 # generate PDP plot
 @app.callback(
     Output("PDP_plot", "src"),
@@ -267,7 +255,9 @@ def _generate_pdp_plot(feature_name, interaction_name, median_line):
         )
         plt.tight_layout()
         fig = plt.gcf()
-        plotly_fig = fig_to_uri(fig)
+        # Convert plt.figure object to base64 encoding
+        # Don't need if use plotly library (plotly.express) to plot
+        plotly_fig = _fig_to_uri(fig)
         return plotly_fig
 
 
