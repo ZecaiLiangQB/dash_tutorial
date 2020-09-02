@@ -47,7 +47,7 @@ def create_pipeline(**kwargs):
             ),
             node(
                 predict,
-                dict(model="example_model", test_x="example_test_x"),
+                ["example_model", "example_test_x", "parameters"],
                 "example_predictions",
             ),
             node(report_accuracy, ["example_predictions", "example_test_y"], None),

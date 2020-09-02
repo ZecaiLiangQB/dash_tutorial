@@ -57,9 +57,11 @@ def train_model(
     return model
 
 
-def predict(model: Any, test_x: pd.DataFrame) -> np.ndarray:
+def predict(model: Any, test_x: pd.DataFrame, parameters: Dict[str, Any]) -> np.ndarray:
     """Node for making predictions given a pre-trained model and a test set."""
-    pred_y = model.predict(test_x)
+    context_cols = parameters["context_cols"]
+    feature_cols = [x for x in test_x.columns if x not in context_cols]
+    pred_y = model.predict(test_x[feature_cols])
 
     return pred_y
 
