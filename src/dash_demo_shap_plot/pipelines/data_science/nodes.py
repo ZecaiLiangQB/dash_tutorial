@@ -59,7 +59,7 @@ def predict(model: Any, test_x: pd.DataFrame) -> np.ndarray:
     """Node for making predictions given a pre-trained model and a test set."""
     pred_y = model.predict(test_x)
     pred_y = [round(y) for y in pred_y]
-    return
+    return pred_y
 
 
 def report_accuracy(predictions: np.ndarray, test_y: pd.DataFrame) -> None:
