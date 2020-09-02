@@ -46,6 +46,7 @@ import plotly.graph_objs as go
 from plot_utils import (
     _fig_to_uri,
     plot_shap_dependence_plot_with_interaction,
+    plot_shap_dependence_plot_by_segment,
 )
 
 
@@ -244,7 +245,7 @@ app.layout = html.Div(
                         html.Div(style={"width": "100%", "height": 10}),  # space
                         # 3.2 Dropdown menu (interaction column)
                         html.H5(
-                            children="Select interaction feature to plot:",
+                            children="Select segment column:",
                             style={"margin-left": left_margin},
                         ),
                         html.Div(
@@ -253,9 +254,10 @@ app.layout = html.Div(
                                     id="segment_name",
                                     options=[
                                         {"label": i, "value": i}
-                                        for i in shap_values.columns
+                                        for i in train_x.columns
+                                        if train_x[i].nunique() <= 5
                                     ],
-                                    value="auto",
+                                    value=None,
                                     placeholder="Select segment column",
                                     style=dropdown_style,
                                 ),
@@ -282,7 +284,7 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 html.Img(
-                                    id="PDP_plot_tab_3",
+                                    id="PDP_plot_tab3",
                                     src="",
                                     style=pdp_plot_stype,
                                 ),
@@ -322,10 +324,10 @@ def _generate_summary_plot(plot_type="dot"):
 # choose feature name, interaction name, and whether to plot median line
 # generate PDP plot
 @app.callback(
-    Output("PDP_plot", "src"),
+    Output("PDP_plot_tab2", "src"),
     [
         Input("feature_name_tab2", "value"),
-        Input("interaction_name_tab2", "value"),
+        Input("interaction_name", "value"),
         Input("median_line_tab2", "value"),
     ],
 )
@@ -336,6 +338,34 @@ def _generate_pdp_plot(feature_name, interaction_name, median_line):
             shap_value_df=shap_values,
             data_df=train_x,
             interaction_col=interaction_name,
+            plot_median_line=(median_line == "yes"),
+        )
+        plt.tight_layout()
+        fig = plt.gcf()
+        # Convert plt.figure object to base64 encoding
+        # Don't need if use plotly library (plotly.express) to plot
+        plotly_fig = _fig_to_uri(fig)
+        return plotly_fig
+
+
+###################### callbacks for Tab 3 ###########################
+# choose feature name, interaction name, and whether to plot median line
+# generate PDP plot
+@app.callback(
+    Output("PDP_plot_tab3", "src"),
+    [
+        Input("feature_name_tab3", "value"),
+        Input("segment_name", "value"),
+        Input("median_line_tab3", "value"),
+    ],
+)
+def _generate_pdp_plot_by_segment(feature_name, segment_name, median_line):
+    if feature_name:
+        plot_shap_dependence_plot_by_segment(
+            feature_col=feature_name,
+            shap_value_df=shap_values,
+            data_df=train_x,
+            segment_col=segment_name,
             plot_median_line=(median_line == "yes"),
         )
         plt.tight_layout()

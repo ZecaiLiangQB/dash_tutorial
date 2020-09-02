@@ -153,8 +153,8 @@ def plot_shap_dependence_plot_by_segment(
         Color-code the median line by selected flag when plot_median_line = True.
 
     """
-    # Define numeric columns
-    numeric_cols = [x for x in data_df.columns if data_df[x].nunique() > 5]
+    # Define categorical columns (used as segment column)
+    cat_cols = [x for x in data_df.columns if data_df[x].nunique() <= 5]
 
     # Build contri_df for median lines
     median_shap_df = _calculate_median_shap_df(
@@ -163,7 +163,7 @@ def plot_shap_dependence_plot_by_segment(
 
     # Color by segment_col
     if segment_col is not None:
-        if segment_col not in numeric_cols:
+        if segment_col in cat_cols:
             color_col, color_dir = _color_by_segment_col(data_df[segment_col])
         else:
             # Bin continuously feature into quartiles
