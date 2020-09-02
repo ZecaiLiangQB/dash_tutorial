@@ -35,6 +35,7 @@ from kedro.pipeline import Pipeline
 
 from dash_demo_shap_plot.pipelines import data_engineering as de
 from dash_demo_shap_plot.pipelines import data_science as ds
+from dash_demo_shap_plot.pipelines import shap
 
 ###########################################################################
 # Here you can find an example pipeline, made of two modular pipelines.
@@ -57,9 +58,13 @@ def create_pipelines(**kwargs) -> Dict[str, Pipeline]:
 
     data_engineering_pipeline = de.create_pipeline()
     data_science_pipeline = ds.create_pipeline()
+    shap_pipeline = shap.create_pipeline()
 
     return {
         "de": data_engineering_pipeline,
         "ds": data_science_pipeline,
-        "__default__": data_engineering_pipeline + data_science_pipeline,
+        "shap": shap_pipeline,
+        "__default__": data_engineering_pipeline
+        + data_science_pipeline
+        + shap_pipeline,
     }

@@ -70,3 +70,6 @@ example_model:
   filepath: data/06_models/example_model.pkl
 
 # shap
+shap_values:
+   type: pandas.CSVDataSet
+   filepath: data/08_reporting/shap_values.csv

@@ -29,3 +29,13 @@
 This is a boilerplate pipeline 'shap'
 generated using Kedro 0.16.4
 """
+
+from typing import Any
+import shap
+
+
+def calculate_shap(model: Any, train_x: pd.DataFrame) -> np.ndarray:
+    explainer = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(train_x)
+
+    return shap_values

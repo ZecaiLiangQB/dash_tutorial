@@ -33,6 +33,10 @@ generated using Kedro 0.16.4
 
 from kedro.pipeline import Pipeline, node
 
+from .nodes import calculate_shap
+
 
 def create_pipeline(**kwargs):
-    return Pipeline([])
+    return Pipeline(
+        [node(calculate_shap, ["example_model", "example_train_x"], "shap_values")]
+    )
