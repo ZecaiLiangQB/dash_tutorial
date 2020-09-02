@@ -3,6 +3,11 @@
 # remove the example pipeline from pipeline.py and the example nodes in
 # `src/pipelines/`
 example_test_data_ratio: 0.2
-example_num_train_iter: 10000
+example_num_train_iter: 100
 example_learning_rate: 0.01
+
+# Hyper parameter for xgboost model
+hyper_param:
+  max_depth: 4
+  learning_rate: 0.1
 
