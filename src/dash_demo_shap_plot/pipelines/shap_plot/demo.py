@@ -307,7 +307,7 @@ app.layout = html.Div(
 # choose plot type from dropdown menu,
 # generate summary plot
 @app.callback(Output("summary_plot", "src"), [Input("plot_type", "value")])
-def _generate_summary_plot(plot_type="dot"):
+def _generate_summary_plot(plot_type):
     feature_cols = shap_values.columns
     shap.summary_plot(
         shap_values.to_numpy(), train_x[feature_cols], plot_type=plot_type, show=False
