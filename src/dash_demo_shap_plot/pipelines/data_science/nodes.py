@@ -39,19 +39,16 @@ from typing import Any, Dict
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import r2_score
 
 
 def train_model(
     train_x: pd.DataFrame, train_y: pd.DataFrame, parameters: Dict[str, Any]
 ) -> Any:
-    """Node for training a simple multi-class xgboost model. The
-    number of training iterations as well as the learning rate are taken from
-    conf/project/parameters.yml. All of the data as well as the parameters
-    will be provided to this function at the time of execution.
-    """
+    """Node for training a simple random forest model."""
     context_cols = parameters["context_cols"]
     feature_cols = [x for x in train_x.columns if x not in context_cols]
-    model = RandomForestRegressor(max_depth=6, random_state=0, n_estimators=10)
+    model = RandomForestRegressor(max_depth=6, random_state=0, n_estimators=100)
     model.fit(train_x[feature_cols], train_y)
 
     return model
@@ -70,10 +67,8 @@ def report_accuracy(predictions: np.ndarray, test_y: pd.DataFrame) -> None:
     """Node for reporting the accuracy of the predictions performed by the
     previous node. Notice that this function has no outputs, except logging.
     """
-    # Get true class index
-    target = np.round(predictions)
     # Calculate accuracy of predictions
-    accuracy = np.sum(test_y.iloc[:, 0] == target) / target.shape[0]
+    r2 = r2_score(test_y, predictions)
     # Log the accuracy of the model
     log = logging.getLogger(__name__)
-    log.info("Model accuracy on test set: %0.2f%%", accuracy * 100)
+    log.info("Model accuracy on test set: %0.2f%%", r2 * 100)
