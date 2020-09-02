@@ -69,8 +69,4 @@ example_model:
   type: kedro.extras.datasets.pickle.PickleDataSet
   filepath: data/06_models/example_model.pkl
 
-example_predictions:
-  type: pandas.CSVDataSet
-  filepath: data/07_model_output/pred_y.csv
-
 # shap
