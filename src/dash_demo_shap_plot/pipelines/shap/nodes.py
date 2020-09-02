@@ -36,7 +36,14 @@ import pandas as pd
 import shap
 
 
-def calculate_shap(model: Any, train_x: pd.DataFrame) -> pd.DataFrame:
+def calculate_shap(
+    model: Any, train_x: pd.DataFrame, parameters: Dict[str, Any]
+) -> pd.DataFrame:
+    # Get feature columns
+    context_cols = parameters["context_cols"]
+    feature_cols = [x for x in train_x.columns if x not in context_cols]
+    train_x = train_x[feature_cols]
+
     # Calculate SHAP values
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(train_x)

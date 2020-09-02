@@ -38,5 +38,11 @@ from .nodes import calculate_shap
 
 def create_pipeline(**kwargs):
     return Pipeline(
-        [node(calculate_shap, ["example_model", "example_train_x"], "shap_values")]
+        [
+            node(
+                calculate_shap,
+                ["example_model", "example_train_x", "parameters"],
+                "shap_values",
+            )
+        ]
     )
