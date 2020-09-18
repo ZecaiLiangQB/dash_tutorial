@@ -61,10 +61,11 @@ shap_values = io.load("shap_values")
 
 
 ############################ styles ##############################
-# css template for the whole page (usually don't change)
+# CSS template for the whole page (usually don't change)
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
-# css style templatea (for each type of component)
+# CSS style templates (for each type of component)
+# Use CSS attributes as keyword
 left_margin = 40
 tab_default_style = {"fontSize": 20}
 tab_selected_style = {"fontSize": 20, "backgroundColor": "#86caf9"}
