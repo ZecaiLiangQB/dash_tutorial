@@ -61,8 +61,10 @@ shap_values = io.load("shap_values")
 
 
 ############################ styles ##############################
+# css template for the whole page (usually don't change)
 external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
+# css style templatea (for each type of component)
 left_margin = 40
 tab_default_style = {"fontSize": 20}
 tab_selected_style = {"fontSize": 20, "backgroundColor": "#86caf9"}
@@ -81,7 +83,10 @@ plt.switch_backend("Agg")
 
 
 ############################ layout ##############################
+# Create app (usually don't change)
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+# Define the components of the whole app
 app.layout = html.Div(
     children=[
         ###############
@@ -108,7 +113,7 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 dcc.Dropdown(
-                                    id="plot_type",
+                                    id="plot_type",  # unique id of the component
                                     options=[
                                         {"label": "dot plot", "value": "dot"},
                                         {"label": "bar plot", "value": "bar"},
@@ -125,7 +130,7 @@ app.layout = html.Div(
                         html.Div(
                             children=[
                                 html.Img(
-                                    id="summary_plot",
+                                    id="summary_plot",  # unique id of the component
                                     src="",
                                     style=summary_plot_style,
                                 ),
@@ -311,6 +316,8 @@ app.layout = html.Div(
 # choose plot type from dropdown menu,
 # generate summary plot
 @app.callback(Output("summary_plot", "src"), [Input("plot_type", "value")])
+# Input: dcc.Dropdown component with unique id = "plot_type"
+# Output: html.Img component with unique id = "summary_plot"
 def _generate_summary_plot(plot_type):
     feature_cols = shap_values.columns
     shap.summary_plot(
