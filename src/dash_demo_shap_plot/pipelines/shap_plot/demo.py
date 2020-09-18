@@ -42,6 +42,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from plotly.tools import mpl_to_plotly
 import plotly.graph_objs as go
+from kedro.framework.context import load_context
 
 from plot_utils import (
     _fig_to_uri,
@@ -51,9 +52,12 @@ from plot_utils import (
 
 
 ############################ data ##############################
-# load data (hard coded)
-train_x = pd.read_csv("data/05_model_input/train_x.csv")
-shap_values = pd.read_csv("data/08_reporting/shap_values.csv")
+# load data
+project_context = load_context(".")
+io = project_context.io
+
+train_x = io.load("example_train_x")
+shap_values = io.load("shap_values")
 
 
 ############################ styles ##############################
